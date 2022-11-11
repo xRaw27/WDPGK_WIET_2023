@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<!-- The previous line tells the browser, that the page uses the HTML5 standard. -->
+
+<html>
+
+<head>
+    <title>Exercise 02</title>
+    <meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+
+    <!-- The following meta line optimizes the site for mobile devices. 
+		      It sets the viewport size to the screen size, so it will be displayed maximized, but unscaled. -->
+    <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1">
+    <style type="text/css">
+        body {
+            /* Set the background color of the HTML page to black */
+            background-color: #000000;
+
+            /* Hide oversized content. This prevents the scroll bars. */
+            overflow: hidden;
+        }
+    </style>
+    <!-- Include two libraries 
+       1. Three.js (core library)
+       2. Detector.js (checks the browsers WebGL capabilities) -->
+    <script src="three.js"></script>
+    <script src="Detector.js"></script>
+</head>
+
+<body>
+    <!-- This is the DIV element which will contain the WebGL canvas. To be identifiable lateron, the id 'WebGLCanvas' is applied to it. -->
+    <div id="WebGLCanvas"> </div>
+
+    <!-- This JavaScript block encloses the Three.js commands -->
+    <script>
+        // Global scene object 
+        var scene;
+
+        // Global camera object 
+        var camera;
+
+        // Global mesh object of the pyramid 
+        var pyramidMesh;
+
+        // Global mesh object of the cube 
+        var cubeMesh;
+
+        // Trees
+        var trees = new Array();
+
+        // Initialize the scene 
+        initializeScene();
+
+        // Animate the scene 
+        animateScene();
+        // renderScene();
+
+        function getPyramid() {
+            var pyramidGeometry = new THREE.CylinderGeometry(0, 1.5, 1.5, 6, false);
+
+            for (i = 0; i < pyramidGeometry.faces.length; i++) {
+                if (pyramidGeometry.faces[i] instanceof THREE.Face4) {
+                    pyramidGeometry.faces[i].vertexColors[0] = new THREE.Color(0xFF0000);
+                    if ((i % 2) == 0) {
+                        pyramidGeometry.faces[i].vertexColors[1] = new THREE.Color(0x00FF00);
+                        pyramidGeometry.faces[i].vertexColors[2] = new THREE.Color(0x0000FF);
+                    } else {
+                        pyramidGeometry.faces[i].vertexColors[1] = new THREE.Color(0x0000FF);
+                        pyramidGeometry.faces[i].vertexColors[2] = new THREE.Color(0x00FF00);
+                    }
+                    pyramidGeometry.faces[i].vertexColors[3] = new THREE.Color(0xFF0000);
+                } else {
+                    pyramidGeometry.faces[i].vertexColors[0] = new THREE.Color(0xFF0000);
+                    pyramidGeometry.faces[i].vertexColors[1] = new THREE.Color(0x00FF00);
+                    pyramidGeometry.faces[i].vertexColors[2] = new THREE.Color(0x0000FF);
+                }
+            }
+
+            var pyramidMaterial = new THREE.MeshBasicMaterial({
+                vertexColors: THREE.VertexColors,
+                side: THREE.DoubleSide
+            });
+
+            return new THREE.Mesh(pyramidGeometry, pyramidMaterial);
+        }
+
+        function getCube() {
+            var cubeGeometry = new THREE.CubeGeometry(0.7, 1, 0.7);
+
+            var cubeMaterials = [
+                new THREE.MeshBasicMaterial({
+                    color: 0xFF0000
+                }),
+                new THREE.MeshBasicMaterial({
+                    color: 0x00FF00
+                }),
+                new THREE.MeshBasicMaterial({
+                    color: 0x0000FF
+                }),
+                new THREE.MeshBasicMaterial({
+                    color: 0xFFFF00
+                }),
+                new THREE.MeshBasicMaterial({
+                    color: 0x00FFFF
+                }),
+                new THREE.MeshBasicMaterial({
+                    color: 0xFFFFFF
+                })
+            ];
+
+            var cubeMaterial = new THREE.MeshFaceMaterial(cubeMaterials);
+
+            return new THREE.Mesh(cubeGeometry, cubeMaterial);
+        }
+
+
+        function get3DTree() {
+            var piramid1 = getPyramid();
+            var piramid2 = getPyramid();
+            var piramid3 = getPyramid();
+            var cube = getCube();
+
+            piramid1.position.set(0, -1, 0);
+            piramid2.position.set(0, 0, 0);
+            piramid3.position.set(0, 1, 0);
+            cube.position.set(0, -2, 0);
+
+            var tree = new THREE.Group();
+            tree.add(piramid1);
+            tree.add(piramid2);
+            tree.add(piramid3);
+            tree.add(cube);
+
+            return tree;
+        }
+
+        /** 
+         * Initialze the scene. 
+         */
+        function initializeScene() {
+            // Check whether the browser supports WebGL. If so, instantiate the hardware accelerated 
+            // WebGL renderer. For antialiasing, we have to enable it. The canvas renderer uses 
+            // antialiasing by default. 
+            // The approach of multiplse renderers is quite nice, because your scene can also be 
+            // viewed in browsers, which don't support WebGL. The limitations of the canvas renderer 
+            // in contrast to the WebGL renderer will be explained in the tutorials, when there is a 
+            // difference. 
+            if (Detector.webgl) {
+                renderer = new THREE.WebGLRenderer({
+                    antialias: true
+                });
+
+                // If its not supported, instantiate the canvas renderer to support all non WebGL browsers 
+            } else {
+                renderer = new THREE.CanvasRenderer();
+            }
+
+            // Set the background color of the renderer to black, with full opacity 
+            renderer.setClearColor(0x000000, 1);
+
+            // Get the size of the inner window (content area) to create a full size renderer 
+            canvasWidth = window.innerWidth;
+            canvasHeight = window.innerHeight;
+
+            // Set the renderers size to the content areas size 
+            renderer.setSize(canvasWidth, canvasHeight);
+
+            // Get the DIV element from the HTML document by its ID and append the renderers DOM 
+            // object to it 
+            document.getElementById("WebGLCanvas").appendChild(renderer.domElement);
+
+            // Create the scene
+            scene = new THREE.Scene();
+
+            // Create the camera
+            camera = new THREE.PerspectiveCamera(45, canvasWidth / canvasHeight, 1, 100);
+            camera.position.set(0, 2, 12);
+            camera.lookAt(scene.position);
+            scene.add(camera);
+            
+            var treePositions = [
+                new THREE.Vector3(-5, 0.5, -2),
+                new THREE.Vector3(-2, -0.3, 1),
+                new THREE.Vector3(0, 0.8, -3),
+                new THREE.Vector3(2, -0.3, 1),
+                new THREE.Vector3(5, 0.5, -2)
+            ]
+
+            treePositions.forEach(position => {
+                var tree = get3DTree();
+                tree.position.copy(position);
+                scene.add(tree);
+                trees.push(tree);
+            })
+        }
+
+        /** 
+         * Animate the scene and call rendering. 
+         */
+        function animateScene() {
+  
+            trees.forEach(tree => {
+                tree.rotateOnAxis(new THREE.Vector3(0, 1, 0).normalize(), 0.075);
+            })
+
+            // Define the function, which is called by the browser supported timer loop. If the 
+            // browser tab is not visible, the animation is paused. So 'animateScene()' is called 
+            // in a browser controlled loop. 
+            requestAnimationFrame(animateScene);
+
+            // Map the 3D scene down to the 2D screen (render the frame) 
+            renderScene();
+        }
+
+        /** 
+         * Render the scene. Map the 3D world to the 2D screen.
+         */
+        function renderScene() {
+            renderer.render(scene, camera);
+        }
+    </script>
+</body>
+
+</html>
